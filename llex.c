@@ -240,7 +240,6 @@ static void trydecpoint (LexState *ls, SemInfo *seminfo) {
 ** will reject ill-formed numerals.
 */
 static void read_numeral (LexState *ls, SemInfo *seminfo) {
-  const char *expo = "Ee";
   int first = ls->current;
   lua_assert(lisdigit(ls->current));
   save_and_next(ls);
@@ -248,12 +247,9 @@ static void read_numeral (LexState *ls, SemInfo *seminfo) {
   if (first == '0') {
     if (check_next(ls, "Xx")) {  /* hexadecimal? */
       hexa = true;
-      expo = "Pp";
     } else check_next(ls, "Bb");  /* binary? */
   }
   for (;;) {
-    if (check_next(ls, expo))  /* exponent part? */
-      check_next(ls, "+-");  /* optional exponent sign */
     if ((hexa ? lisxdigit(ls->current) : lisdigit(ls->current)) || ls->current == '.')
       save_and_next(ls);
     else  break;
