@@ -184,10 +184,20 @@ static int pico8_tostr(lua_State *l) {
 }
 
 static int pico8_tonum(lua_State *l) {
-    char const *s = lua_tostring(l, 1);
     lua_Number ret;
-    // If parsing failed, PICO-8 returns nothing
-    if (!luaO_str2d(s, strlen(s), &ret)) return 0;
+    switch (lua_type(l, 1))
+    {
+        case LUA_TSTRING: {
+            char const *s = lua_tostring(l, 1);
+            // If parsing failed, PICO-8 returns nothing
+            if (!luaO_str2d(s, strlen(s), &ret)) return 0;
+            break;
+        }
+        case LUA_TNUMBER: ret = lua_tonumber(l, 1); break;
+        // PICO-8 0.2.3 changelog: “tonum(boolean_value) returns 1 or 0 instead of nil”
+        case LUA_TBOOLEAN: ret = lua_toboolean(l, 1) ? 1 : 0; break;
+        default: return 0;
+    }
     lua_pushnumber(l, ret);
     return 1;
 }
