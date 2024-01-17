@@ -208,10 +208,8 @@ static int pico8_tonum(lua_State *l) {
             uint16_t flags = lua_gettop(l) >= 2 ? lua_tointeger(l, 2) : 0;
             if (flags & 0x1) {
                 char buffer[9];
-                size_t i = 0;
-                while (s[i] != '\0') {
+                for (size_t i = 0; s[i] != '\0'; ++i) {
                     buffer[i] = isxdigit(s[i]) ? s[i] : '0';
-                    i++;
                 }
                 uint32_t bits = strtol(buffer, NULL, 16);
                 if (flags & 0x2) bits >>= 16;
@@ -240,7 +238,8 @@ static int pico8_tonum(lua_State *l) {
 static int pico8_chr(lua_State *l) {
     // PICO-8 seems to top out at allowing 248 arguments
     char s[248];
-    size_t numargs = lua_gettop(l) < sizeof(s) ? lua_gettop(l) : sizeof(s);
+    size_t numargs = lua_gettop(l);
+    if (numargs > sizeof(s)) numargs = sizeof(s);
     for (size_t i = 0; i < numargs; i++) {
         s[i] = (char)(uint8_t)lua_tonumber(l, i + 1);
     }
@@ -274,7 +273,6 @@ static int pico8_split(lua_State *l) {
     if (lua_isnil(l, 1)) {
         return 0;
     }
-
     size_t count = 0, hlen;
     char const *haystack = luaL_checklstring(l, 1, &hlen);
     if (!haystack)
