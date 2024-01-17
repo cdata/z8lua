@@ -140,7 +140,15 @@ static int pico8_rotr(lua_State *l) {
 static int pico8_tostr(lua_State *l) {
     char buffer[20];
     char const *s = buffer;
-    auto hex = lua_toboolean(l, 2);
+
+    uint16_t flags = 0;
+    if (lua_isboolean(l, 2)) {
+        flags = lua_toboolean(l, 2) ? 1 : 0;
+    }
+    else if (lua_isnumber(l, 2)) {
+        flags = lua_tointeger(l, 2);
+    }
+
     switch (lua_type(l, 1))
     {
         case LUA_TNONE:
@@ -149,9 +157,17 @@ static int pico8_tostr(lua_State *l) {
             break;
         case LUA_TNUMBER: {
             lua_Number x = lua_tonumber(l, 1);
-            if (hex) {
+            if (flags) {
                 uint32_t b = (uint32_t)x.bits();
-                sprintf(buffer, "0x%04x.%04x", (b >> 16) & 0xffff, b & 0xffff);
+                if ((flags & 0x3) == 0x3) {
+                    sprintf(buffer, "0x%04x%04x", (b >> 16) & 0xffff, b & 0xffff);
+                }
+                else if ((flags & 0x2) == 0x2) {
+                    sprintf(buffer, "%d", b);
+                }
+                else {
+                    sprintf(buffer, "0x%04x.%04x", (b >> 16) & 0xffff, b & 0xffff);
+                }
             } else {
                 lua_number2str(buffer, x);
             }
@@ -172,7 +188,7 @@ static int pico8_tostr(lua_State *l) {
         case LUA_TFUNCTION:
             // PICO-8 0.1.12d changelog: “tostr(x,true) can also be used to view
             // the hex value of functions and tables (uses Lua's tostring)”
-            if (hex) {
+            if (flags) {
                 luaL_tolstring(l, 1, NULL);
                 return 1;
             }
@@ -189,6 +205,25 @@ static int pico8_tonum(lua_State *l) {
     {
         case LUA_TSTRING: {
             char const *s = lua_tostring(l, 1);
+            uint16_t flags = lua_gettop(l) >= 2 ? lua_tointeger(l, 2) : 0;
+            if (flags & 0x1) {
+                char buffer[9];
+                size_t i = 0;
+                while (s[i] != '\0') {
+                    buffer[i] = isxdigit(s[i]) ? s[i] : '0';
+                    i++;
+                }
+                uint32_t bits = strtol(buffer, NULL, 16);
+                if (flags & 0x2) bits >>= 16;
+                lua_pushnumber(l, (lua_Number)bits);
+                return 1;
+            }
+            else if (flags & 0x2) {
+                uint32_t bits = strtol(s, NULL, 10);
+                bits >>= 16;
+                lua_pushnumber(l, (lua_Number)bits);
+                return 1;
+            }
             // If parsing failed, PICO-8 returns nothing
             if (!luaO_str2d(s, strlen(s), &ret)) return 0;
             break;
@@ -203,14 +238,20 @@ static int pico8_tonum(lua_State *l) {
 }
 
 static int pico8_chr(lua_State *l) {
-    char s[2] = { (char)(uint8_t)lua_tonumber(l, 1), '\0' };
-    lua_pushlstring(l, s, 1);
+    // PICO-8 seems to top out at allowing 248 arguments
+    char s[248];
+    size_t numargs = lua_gettop(l) < sizeof(s) ? lua_gettop(l) : sizeof(s);
+    for (size_t i = 0; i < numargs; i++) {
+        s[i] = (char)(uint8_t)lua_tonumber(l, i + 1);
+    }
+    lua_pushlstring(l, s, numargs);
     return 1;
 }
 
 static int pico8_ord(lua_State *l) {
     size_t len;
-    int n = 0, count = 1;
+    int n = 0;
+    int count = 1;
     char const *s = luaL_checklstring(l, 1, &len);
     if (!lua_isnone(l, 3)) {
         if (!lua_isnumber(l, 3)) return 0;
@@ -230,6 +271,10 @@ static int pico8_ord(lua_State *l) {
 }
 
 static int pico8_split(lua_State *l) {
+    if (lua_isnil(l, 1)) {
+        return 0;
+    }
+
     size_t count = 0, hlen;
     char const *haystack = luaL_checklstring(l, 1, &hlen);
     if (!haystack)
