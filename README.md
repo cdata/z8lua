@@ -22,7 +22,7 @@ There are three main feature branches:
 ## PICO-8 features
 
  - short `if` syntax (on one line)
- - short `print` syntax (`?` at the beginning of a line)
+ - short `print` syntax (`?"hello"`)
  - compound assignment operators: `+=` `/=` etc.
  - C style not equal operator: `!=`
  - C++ style comments with `//`
