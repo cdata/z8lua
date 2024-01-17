@@ -170,7 +170,10 @@ struct fix32
     inline fix32& operator %=(fix32 x) { return *this = *this % x; }
 
     // Free functions
-    static inline fix32 abs(fix32 a) { return a.m_bits > 0 ? a : -a; }
+
+    // PICO-8 0.2.3 changelog: abs(0x8000) should be 0x7fff.ffff
+    static inline fix32 abs(fix32 a) { return a.m_bits > 0 ? a : -a.m_bits > 0 ? ~a : -a; }
+
     static inline fix32 min(fix32 a, fix32 b) { return a < b ? a : b; }
     static inline fix32 max(fix32 a, fix32 b) { return a > b ? a : b; }
 
