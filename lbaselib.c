@@ -195,8 +195,17 @@ static int luaB_type (lua_State *L) {
 }
 
 
+static int _empty(lua_State *L) { return 0; }
+
+
 static int pairsmeta (lua_State *L, const char *method, int iszero,
                       lua_CFunction iter) {
+  // PICO-8 0.2.0 changelog: pairs(nil) returns an empty function
+  if (lua_isnil(L, 1)) {
+    lua_pushcfunction(L, _empty);
+    return 1;
+  }
+
   if (!luaL_getmetafield(L, 1, method)) {  /* no metamethod? */
     luaL_checktype(L, 1, LUA_TTABLE);  /* argument must be a table */
     lua_pushcfunction(L, iter);  /* will return generator, */
