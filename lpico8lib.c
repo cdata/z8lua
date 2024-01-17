@@ -184,10 +184,20 @@ static int pico8_tostr(lua_State *l) {
 }
 
 static int pico8_tonum(lua_State *l) {
-    char const *s = lua_tostring(l, 1);
     lua_Number ret;
-    // If parsing failed, PICO-8 returns nothing
-    if (!luaO_str2d(s, strlen(s), &ret)) return 0;
+    switch (lua_type(l, 1))
+    {
+        case LUA_TSTRING: {
+            char const *s = lua_tostring(l, 1);
+            // If parsing failed, PICO-8 returns nothing
+            if (!luaO_str2d(s, strlen(s), &ret)) return 0;
+            break;
+        }
+        case LUA_TNUMBER: ret = lua_tonumber(l, 1); break;
+        // PICO-8 0.2.3 changelog: “tonum(boolean_value) returns 1 or 0 instead of nil”
+        case LUA_TBOOLEAN: ret = lua_toboolean(l, 1) ? 1 : 0; break;
+        default: return 0;
+    }
     lua_pushnumber(l, ret);
     return 1;
 }
@@ -200,17 +210,23 @@ static int pico8_chr(lua_State *l) {
 
 static int pico8_ord(lua_State *l) {
     size_t len;
-    int n = 0;
+    int n = 0, count = 1;
     char const *s = luaL_checklstring(l, 1, &len);
+    if (!lua_isnone(l, 3)) {
+        if (!lua_isnumber(l, 3)) return 0;
+        count = int(lua_tonumber(l, 3));
+    }
     if (!lua_isnone(l, 2)) {
-        if (!lua_isnumber(l, 2))
-            return 0;
+        if (!lua_isnumber(l, 2)) return 0;
         n = int(lua_tonumber(l, 2)) - 1;
     }
-    if (n < 0 || size_t(n) >= len)
+    if (n < 0 || size_t(n) >= len || count < 1)
         return 0;
-    lua_pushnumber(l, uint8_t(s[n]));
-    return 1;
+    if (size_t(n + count) > len)
+        count = len - n;
+    for (int i = 0; i < count; ++i)
+        lua_pushnumber(l, uint8_t(s[n + i]));
+    return count;
 }
 
 static int pico8_split(lua_State *l) {

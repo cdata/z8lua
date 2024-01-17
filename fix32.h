@@ -142,7 +142,8 @@ struct fix32
     {
         // PICO-8 always returns positive values
         x = abs(x);
-        int32_t result = x ? m_bits % x.m_bits : m_bits;
+        // PICO-8 0.2.5f changelog: x % 0 gives 0 (was x)
+        int32_t result = x ? m_bits % x.m_bits : 0;
         return frombits(result >= 0 ? result : result + x.m_bits);
     }
 
@@ -169,7 +170,10 @@ struct fix32
     inline fix32& operator %=(fix32 x) { return *this = *this % x; }
 
     // Free functions
-    static inline fix32 abs(fix32 a) { return a.m_bits > 0 ? a : -a; }
+
+    // PICO-8 0.2.3 changelog: abs(0x8000) should be 0x7fff.ffff
+    static inline fix32 abs(fix32 a) { return a.m_bits > 0 ? a : -a.m_bits > 0 ? ~a : -a; }
+
     static inline fix32 min(fix32 a, fix32 b) { return a < b ? a : b; }
     static inline fix32 max(fix32 a, fix32 b) { return a > b ? a : b; }
 
