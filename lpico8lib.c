@@ -57,12 +57,14 @@ static int pico8_flr(lua_State *l) {
 }
 
 static int pico8_cos(lua_State *l) {
-    lua_pushnumber(l, cast_num(std::cos(-TAU * (double)lua_tonumber(l, 1))));
+    lua_Number x = lua_tonumber(l, 1);
+    lua_pushnumber(l, cast_num(std::cos(-TAU * (double)(x - lua_Number::floor(x)))));
     return 1;
 }
 
 static int pico8_sin(lua_State *l) {
-    lua_pushnumber(l, cast_num(std::sin(-TAU * (double)lua_tonumber(l, 1))));
+    lua_Number x = lua_tonumber(l, 1);
+    lua_pushnumber(l, cast_num(std::sin(-TAU * (double)(x - lua_Number::floor(x)))));
     return 1;
 }
 
