@@ -1,7 +1,7 @@
 //
 //  ZEPTO-8 — Fantasy console emulator
 //
-//  Copyright © 2016—2020 Sam Hocevar <sam@hocevar.net>
+//  Copyright © 2016–2023 Sam Hocevar <sam@hocevar.net>
 //
 //  This program is free software. It comes without any warranty, to
 //  the extent permitted by applicable law. You can redistribute it
@@ -24,6 +24,8 @@
 #include "lauxlib.h"
 #include "llimits.h"
 #include "lobject.h"
+
+#include "sintable.h"
 
 #define TAU 6.2831853071795864769252867665590057683936
 
@@ -62,7 +64,7 @@ static lua_Number sin_helper(lua_Number x) {
     //  - sin(x) equals sin(~x) rather than sin(-x)
     //  - the last two bits are rounded
     auto a = ((x.bits() & 0x4000 ? ~x : x).bits() + 2) & 0x3ffc;
-    auto ret = cast_num(std::sin(TAU * (double)lua_Number::frombits(a)));
+    auto ret = lua_Number::frombits(4 * a + sintable[a >> 2]);
     return x.bits() & 0x8000 ? ret : -ret;
 }
 
@@ -359,4 +361,3 @@ LUAMOD_API int luaopen_pico8 (lua_State *L) {
   luaL_setfuncs(L, pico8lib, 0);
   return 1;
 }
-
