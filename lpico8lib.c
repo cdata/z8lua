@@ -56,15 +56,23 @@ static int pico8_flr(lua_State *l) {
     return 1;
 }
 
+static lua_Number sin_helper(lua_Number x) {
+    // Reduce angle to 0x0 … 0x0.3fff, with the following PICO-8 rules:
+    //  - sin(x) = -sin(x + 0.5)
+    //  - sin(x) equals sin(~x) rather than sin(-x)
+    //  - the last two bits are rounded
+    auto a = ((x.bits() & 0x4000 ? ~x : x).bits() + 2) & 0x3ffc;
+    auto ret = cast_num(std::sin(TAU * (double)lua_Number::frombits(a)));
+    return x.bits() & 0x8000 ? ret : -ret;
+}
+
 static int pico8_cos(lua_State *l) {
-    lua_Number x = lua_tonumber(l, 1);
-    lua_pushnumber(l, cast_num(std::cos(-TAU * (double)(x - lua_Number::floor(x)))));
+    lua_pushnumber(l, sin_helper(lua_tonumber(l, 1) - lua_Number::frombits(0x4000)));
     return 1;
 }
 
 static int pico8_sin(lua_State *l) {
-    lua_Number x = lua_tonumber(l, 1);
-    lua_pushnumber(l, cast_num(std::sin(-TAU * (double)(x - lua_Number::floor(x)))));
+    lua_pushnumber(l, sin_helper(lua_tonumber(l, 1)));
     return 1;
 }
 
