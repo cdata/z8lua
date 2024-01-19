@@ -1,7 +1,7 @@
 //
 //  ZEPTO-8 — Fantasy console emulator
 //
-//  Copyright © 2016—2020 Sam Hocevar <sam@hocevar.net>
+//  Copyright © 2016–2023 Sam Hocevar <sam@hocevar.net>
 //
 //  This program is free software. It comes without any warranty, to
 //  the extent permitted by applicable law. You can redistribute it
@@ -123,19 +123,19 @@ struct fix32
     fix32 operator /(fix32 x) const
     {
         // This special case ensures 0x8000/0x1 = 0x8000, not 0x8000.0001
-        if (x.m_bits == 0x10000)
+        if (x.m_bits == 0x1'0000)
             return *this;
 
         if (x.m_bits)
         {
             using std::abs;
-            int64_t result = int64_t(m_bits) * 0x10000 / x.m_bits;
-            if (abs(result) <= 0x7fffffffu)
+            int64_t result = int64_t(m_bits) * 0x1'0000 / x.m_bits;
+            if (abs(result) <= 0x7fff'ffffu)
                 return frombits(int32_t(result));
         }
 
         // Return 0x8000.0001 (not 0x8000.0000) for -Inf, just like PICO-8
-        return frombits((m_bits ^ x.m_bits) >= 0 ? 0x7fffffffu : 0x80000001u);
+        return frombits((m_bits ^ x.m_bits) >= 0 ? 0x7fff'ffffu : 0x8000'0001u);
     }
 
     fix32 operator %(fix32 x) const
@@ -178,7 +178,7 @@ struct fix32
     static inline fix32 max(fix32 a, fix32 b) { return a > b ? a : b; }
 
     static inline fix32 ceil(fix32 x) { return -floor(-x); }
-    static inline fix32 floor(fix32 x) { return frombits(x.m_bits & 0xffff0000); }
+    static inline fix32 floor(fix32 x) { return frombits(x.m_bits & 0xffff'0000); }
 
     static fix32 pow(fix32 x, fix32 y) { return fix32(std::pow(double(x), double(y))); }
 
