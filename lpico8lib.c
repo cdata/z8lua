@@ -91,8 +91,19 @@ static int pico8_atan2(lua_State *l) {
 }
 
 static int pico8_sqrt(lua_State *l) {
-    lua_Number x = lua_tonumber(l, 1);
-    lua_pushnumber(l, cast_num(x.bits() >= 0 ? std::sqrt((double)x) : 0));
+    int64_t root = 0, x = int64_t(lua_tonumber(l, 1).bits()) << 16;
+    if (x > 0) {
+        // Square root by abacus algorithm, Martin Guy @ UKC, June 1985.
+        // From a book on programming abaci by Mr C. Woo.
+        // Observing a PICO-8 JavaScript export shows the same algorithm.
+        for (int64_t a = int64_t(1) << 46; a; a >>= 2, root >>= 1) {
+            if (x >= a + root) {
+                x -= a + root;
+                root += a << 1;
+            }
+        }
+    }
+    lua_pushnumber(l, lua_Number::frombits(root));
     return 1;
 }
 
