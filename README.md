@@ -37,9 +37,9 @@ There are three main feature branches:
    of this software; for a more complete PICO-8 implementation, see the [zepto8
    emulator](https://github.com/samhocevar/zepto8) which is based on z8lua. The only exceptions
    are the `@`, `%` and `$` operators (see next section).
- - the `^` (power) operator and the `atan2` function are implemented using floating point, which
-   is inelegant and a potential performance issue, but which also means the results are not
-   bit-by-bit equivalent to the original PICO-8.
+ - the `^` (power) operator is implemented using floating point, which is inelegant and a
+   potential performance issue, and which also means the results are not bit-by-bit equivalent to
+   the original PICO-8.
 
 ## API extensions
 
