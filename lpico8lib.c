@@ -1,7 +1,7 @@
 //
 //  ZEPTO-8 — Fantasy console emulator
 //
-//  Copyright © 2016–2023 Sam Hocevar <sam@hocevar.net>
+//  Copyright © 2016–2024 Sam Hocevar <sam@hocevar.net>
 //
 //  This program is free software. It comes without any warranty, to
 //  the extent permitted by applicable law. You can redistribute it
@@ -10,11 +10,8 @@
 //  See http://www.wtfpl.net/ for more details.
 //
 
-
-#include <cmath>
 #include <cctype>
 #include <cstring>
-#include <algorithm>
 
 #define lpico8lib_c
 #define LUA_LIB
@@ -25,9 +22,7 @@
 #include "llimits.h"
 #include "lobject.h"
 
-#include "sintable.h"
-
-#define TAU 6.2831853071795864769252867665590057683936
+#include "trigtables.h"
 
 static int pico8_max(lua_State *l) {
     lua_pushnumber(l, lua_Number::max(lua_tonumber(l, 1), lua_tonumber(l, 2)));
@@ -83,10 +78,21 @@ static int pico8_sin(lua_State *l) {
 static int pico8_atan2(lua_State *l) {
     lua_Number x = lua_tonumber(l, 1);
     lua_Number y = lua_tonumber(l, 2);
-    // This could simply be atan2(-y,x) but since PICO-8 decided that
-    // atan2(0,0) = 0.75 we need to do the same in our version.
-    double a = 0.75 + std::atan2((double)x, (double)y) / TAU;
-    lua_pushnumber(l, cast_num(a >= 1 ? a - 1 : a));
+    int32_t bits = 0x4000;
+    if (x) {
+        // Use std::abs() instead of fix32::abs() to emulate PICO-8’s behaviour
+        // with e.g. atan2(0x8000, 0x8000.0001)
+        auto q = (std::abs(int64_t(y.bits())) << 16) / std::abs(int64_t(x.bits()));
+        if (q > 0x10000)
+            bits -= atantable[(int64_t(1) << 32) / q >> 5];
+        else
+            bits = atantable[q >> 5];
+    }
+    if (x.bits() < 0) bits = 0x8000 - bits;
+    if (y.bits() > 0) bits = -bits & 0xffff;
+    // Emulate a bug in PICO-8 with e.g. atan2(1, 0x8000)
+    if (x && y.bits() == int32_t(0x80000000)) bits = -bits & 0xffff;
+    lua_pushnumber(l, lua_Number::frombits(bits));
     return 1;
 }
 
