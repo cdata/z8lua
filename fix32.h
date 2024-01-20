@@ -1,7 +1,7 @@
 //
 //  ZEPTO-8 — Fantasy console emulator
 //
-//  Copyright © 2016–2023 Sam Hocevar <sam@hocevar.net>
+//  Copyright © 2016–2024 Sam Hocevar <sam@hocevar.net>
 //
 //  This program is free software. It comes without any warranty, to
 //  the extent permitted by applicable law. You can redistribute it
@@ -172,7 +172,7 @@ struct fix32
     // Free functions
 
     // PICO-8 0.2.3 changelog: abs(0x8000) should be 0x7fff.ffff
-    static inline fix32 abs(fix32 a) { return a.m_bits > 0 ? a : -a.m_bits > 0 ? ~a : -a; }
+    static inline fix32 abs(fix32 a) { return a.m_bits >= 0 ? a : a.m_bits << 1 == 0 ? ~a : -a; }
 
     static inline fix32 min(fix32 a, fix32 b) { return a < b ? a : b; }
     static inline fix32 max(fix32 a, fix32 b) { return a > b ? a : b; }
